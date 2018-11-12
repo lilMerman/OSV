@@ -1,7 +1,7 @@
 #include <Servo.h>
 
-int trigPin1 = 9;
-int echoPin1 = 10;
+int trigPin = 9;
+int echoPin = 10;
 
 long time;
 int dist;
@@ -16,7 +16,7 @@ int yo = 18;
 int x;
 int y;
 
-int object [10][2];
+float object [10][2];
 int counter;
 
 int avgDist;
@@ -52,16 +52,16 @@ void loop() {
 
 //ultrasonic 1
     //clear trig
-    digitalWrite(trigPin1, LOW);
+    digitalWrite(trigPin, LOW);
     delay(2);
   
     //Generate ultrasound, 10 us
-    digitalWrite(trigPin1, HIGH);
+    digitalWrite(trigPin, HIGH);
     delay(10);
-    digitalWrite(trigPin1, LOW);
+    digitalWrite(trigPin, LOW);
   
     //Reading from echoPin
-    time = pulseIn(echoPin1, HIGH);
+    time = pulseIn(echoPin, HIGH);
   
     //distance from time
     dist = time * 0.034 / 2;
@@ -75,31 +75,11 @@ void loop() {
 
   //obstacle detected
     if(abs(prevDist - dist) < 5 && dist < 40){      //check for 5cm difference in readings, within 40 cm
-      //grid coordinates
-      int grid_y = y/3;                             //y grid square
-      int grid_x = x/3;                             //x grid square
-      Serial.print("Object @ ");
-      Serial.print("(");
-      Serial.print(x);
-      Serial.print(", ");
-      Serial.print(y);
-      Serial.println(")");
-      Serial.print("Grid square: ");
-      Serial.print("(");
-      Serial.print(grid_x);
-      Serial.print(", ");
-      Serial.print(grid_y);
-      Serial.println(")");
-      if(object[counter-1][1] == grid_y){           //if previous grid square (y val) already read, update x val
-        object[counter-1][0] = grid_x;
-      }
-      else{                                         //new grid square
-        object[counter][0] = grid_x;
-        object[counter][1] = grid_y;
-        counter++;                                  //count number of obstacle readings
-        avgDist += dist;                            //add to running sum of dist
-      }
       
+      object[counter][0] = dist;
+      object[counter][1] = angle;
+      counter++;
+      avgDist += dist;
     }
     
     prevDist = dist;
@@ -118,38 +98,18 @@ void loop() {
   Serial.print("extra = ");
   Serial.println(extra);
 
-  int objectFinal[counter - (2*extra)][2];          //new object "map"; sized to get rid of excess detected space
+  float objectTrimmed[counter - (2*extra)][2];          //new object "map"; sized to get rid of excess detected space
   for(int i = 0; i<(counter - (2*extra)); i++){
     for(int j = 0; j<2; j++){
-      objectFinal[i][j] = object[i+extra+1][j];     //store middle-ish (shifted towards higher y by 1) values
+      objectTrimmed[i][j] = object[i+extra+1][j];     //store middle-ish (shifted towards higher y by 1) values
     }
   }
 
-  Serial.println("objectFinal");
-  for(int i = 0; i<counter - (2*extra); i++){
-    for(int j = 0; j<2; j++){
-      Serial.print(objectFinal[i][j]);
-      Serial.print(" ");
-    }
-    Serial.println();
-  }
-  
+  float objectFinal[2][2];
+  objectFinal[0][0] = objectTrimmed[0][0];
+  objectFinal[0][1] = objectTrimmed[0][1];
+  objectFinal[1][0] = objectTrimmed[counter - (2*extra)][0];
+  objectFinal[1][1] = objectTrimmed[counter - (2*extra)][1];
   
 
-  //Serial.println("delay 1s");
-  delay(1000);
-  //Serial.println("loop 2");
-  //reset to 0
-  for(int a = 180; a>0; a--){
-    servo.write(a);
-    delay(15);
-  }
-  
-
-  //Serial.println("write");
-  servo.write(0);
-  //Serial.println("3s");
-  delay(3000);
-  Serial.println();
-  Serial.println("New Scan:");
 }
