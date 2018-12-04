@@ -1,6 +1,6 @@
 #include "Enes100.h"
 
-Enes100 enes("TGTWAPTT", BLACK_BOX, 14, 1, 0);    //enes("name", MISSION, image_num, connect to pin 5, connect to pin 4)
+Enes100 enes("TGTWAPTT", BLACK_BOX, 14, 5, 1);    //enes("name", MISSION, image_num, connect to pin 5, connect to pin 4)
 
 int trigL = 2;
 int echoL = 4;
@@ -249,64 +249,66 @@ void setup() {
   pinMode(echoL, INPUT);
   pinMode(echoR, INPUT);
   Serial.begin(9600);
-
+  enes.println("c");
+  Serial.println("connected");
 }
 
 void loop() {
-  enes.updateLocation();
-  if(enes.location.x < 1.2){
-    turn_y_1(pwm_turn);
-    delay(500);
-    move_y_1(pwm_move);
-    delay(500);
-    turn_0(pwm_turn);
-    delay(500);
-    move_rocks(pwm_move);
-    delay(500);
-  }
-  if(enes.location.x < 2.2){            //before x = 2.25 --> obstacle avoidance
-    forward(pwm_move);  
-    Serial.println("forward");
-    ultrasonic();
-    if(distL < 20 && distR < 20){       //if both sense, depends on y position
-      off();
-      delay(1000);
-      if(enes.location.y < 1){              //if below y = 1, turn up, move 30 cm
-        turn_up(pwm_turn);                  
-        delay(500);
-        float safe_y = enes.location.y + 0.3;
-        move_up_y(pwm_move, safe_y);
+  if(enes.updateLocation()){
+    if(enes.location.x < 1.2){
+      turn_y_1(pwm_turn);
+      delay(500);
+      move_y_1(pwm_move);
+      delay(500);
+      turn_0(pwm_turn);
+      delay(500);
+      move_rocks(pwm_move);
+      delay(500);
+    }
+    if(enes.location.x < 2.2){            //before x = 2.25 --> obstacle avoidance
+      forward(pwm_move);  
+      //Serial.println("forward");
+      ultrasonic();
+      if(distL < 20 && distR < 20){       //if both sense, depends on y position
         off();
+        delay(1000);
+        if(enes.location.y < 1){              //if below y = 1, turn up, move 30 cm
+          turn_up(pwm_turn);                  
+          delay(500);
+          float safe_y = enes.location.y + 0.3;
+          move_up_y(pwm_move, safe_y);
+          off();
+        }
+        else{                                 //else, turn down, move 30 cm
+          turn_down(pwm_turn);
+          delay(500);
+          float safe_y = enes.location.y - 0.3;
+          move_down_y(pwm_move, safe_y);
+          off();
+        }
       }
-      else{                                 //else, turn down, move 30 cm
+      else if(distL < 20){                //if left senses, turn down, move 15 cm
+        off();
+        delay(500);
         turn_down(pwm_turn);
         delay(500);
-        float safe_y = enes.location.y - 0.3;
+        float safe_y = enes.location.y - 0.15;
         move_down_y(pwm_move, safe_y);
         off();
       }
-    }
-    else if(distL < 20){                //if left senses, turn down, move 15 cm
-      off();
+      else if(distR < 20){                //if right sense, turn up, move 15 cm
+        off();
+        delay(500);
+        turn_up(pwm_turn);
+        delay(500);
+        float safe_y = enes.location.y + 0.15;
+        move_up_y(pwm_move, safe_y);
+        off();
+      }
       delay(500);
-      turn_down(pwm_turn);
+      turn_0(pwm_turn);
       delay(500);
-      float safe_y = enes.location.y - 0.15;
-      move_down_y(pwm_move, safe_y);
-      off();
-    }
-    else if(distR < 20){                //if right sense, turn up, move 15 cm
-      off();
-      delay(500);
-      turn_up(pwm_turn);
-      delay(500);
-      float safe_y = enes.location.y + 0.15;
-      move_up_y(pwm_move, safe_y);
       off();
     }
-    delay(500);
-    turn_0(pwm_turn);
-    delay(500);
-    off();
   }
 }
